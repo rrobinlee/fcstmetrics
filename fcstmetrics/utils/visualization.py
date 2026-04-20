@@ -4,6 +4,53 @@ from typing import Optional, Tuple
 import matplotlib.pyplot as plt
 from scipy import stats
 
+def plot_eda(series: np.ndarray, timestamps: Optional[pd.DatetimeIndex] = None) -> plt.Figure:
+    fig, axes = plt.subplots(2, 2, figsize=(16, 10))
+    x_axis = timestamps if timestamps is not None else np.arange(len(series))
+  
+    axes[0, 0].plot(x_axis, series, linewidth=2, color='#2C3E50')
+    axes[0, 0].fill_between(x_axis, series, alpha=0.3, color='#3498DB')
+    axes[0, 0].set_title(f'{series.name}', fontsize=14, fontweight='bold')
+    axes[0, 0].set_xlabel('Date', fontsize=11)
+    axes[0, 0].set_ylabel(f'{series.name}', fontsize=11)
+    axes[0, 0].grid(True, alpha=0.3)
+    
+    axes[0, 1].hist(series, bins=30, edgecolor='black', alpha=0.7, color='#3498DB')
+    axes[0, 1].axvline(series.mean(), color='red', linestyle='--', linewidth=2, label='Mean')
+    axes[0, 1].set_title(f'Distribution of {series.name}', fontsize=14, fontweight='bold')
+    axes[0, 1].set_xlabel(f'{series.name}', fontsize=11)
+    axes[0, 1].set_ylabel('Frequency', fontsize=11)
+    axes[0, 1].legend()
+    axes[0, 1].grid(True, alpha=0.3)
+    
+    yoy_change = series.diff(12)
+    axes[1, 0].plot(x_axis, yoy_change, linewidth=2, color='#E74C3C')
+    axes[1, 0].axhline(y=0, color='black', linestyle='-', linewidth=1)
+    axes[1, 0].fill_between(x_axis, yoy_change, 0, 
+                             where=(yoy_change > 0), alpha=0.3, color='green', label='Increase')
+    axes[1, 0].fill_between(x_axis, yoy_change, 0, 
+                             where=(yoy_change <= 0), alpha=0.3, color='red', label='Decrease')
+    axes[1, 0].set_title('Year-over-Year Change', fontsize=14, fontweight='bold')
+    axes[1, 0].set_xlabel('Date', fontsize=11)
+    axes[1, 0].set_ylabel('YoY Change', fontsize=11)
+    axes[1, 0].legend()
+    axes[1, 0].grid(True, alpha=0.3)
+    
+    rolling_mean = series.rolling(window=12).mean()
+    rolling_std = series.rolling(window=12).std()
+    axes[1, 1].plot(x_axis, series, linewidth=1, alpha=0.5, label='Original', color='gray')
+    axes[1, 1].plot(x_axis, rolling_mean, linewidth=2, label='12-Month MA', color='#3498DB')
+    axes[1, 1].fill_between(x_axis, rolling_mean - 2*rolling_std, rolling_mean + 2*rolling_std,
+                             alpha=0.2, color='#3498DB', label='+/- Std Dev')
+    axes[1, 1].set_title('Rolling Statistics (12-Month Window)', fontsize=14, fontweight='bold')
+    axes[1, 1].set_xlabel('Date', fontsize=11)
+    axes[1, 1].set_ylabel(f'{series.name}', fontsize=11)
+    axes[1, 1].legend()
+    axes[1, 1].grid(True, alpha=0.3)
+    
+    plt.tight_layout()
+    return fig
+
 def plot_residuals(residuals: np.ndarray, timestamps: Optional[pd.DatetimeIndex] = None, figsize: Tuple[int, int] = (14, 10),
                    title: str = "Residual Analysis") -> plt.Figure:
     fig, axes = plt.subplots(2, 2, figsize=figsize)
