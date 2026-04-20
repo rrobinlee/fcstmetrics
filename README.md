@@ -15,28 +15,27 @@ pip install -e ".[sktime,viz]"
 ```
 fcstmetrics/
 │
-├── __init__.py # main imports
-├── api.py # quick-access functions
+├── __init__.py              # main imports
+├── api.py                   # quick-access functions
 │
-├── core/  # core validation components
+├── core/                    # core components
 │   ├── __init__.py
-│   ├── framework.py # model validation framework
-│   ├── validators.py # residual and stationarity validators
-│   ├── metrics.py # performance metrics calculator
-│   └── results.py # validation summary
+│   ├── framework.py         # main framework
+│   ├── validators.py        # residual and stationarity tests
+│   ├── metrics.py           # performance metrics
+│   └── results.py           # validation summary
 │
-├── extensions/ # other features
+├── extensions/              # other features
 │   ├── __init__.py
-│   ├── cross_validation.py # cross-validation
-│   ├── probabilistic.py # probabilistic forecast validation
-│   ├── comparison.py # model comparison tools
-│   └── backtesting.py # backtesting framework
+│   ├── cross_validation.py  # cross-validation
+│   ├── probabilistic.py     # probabilistic forecasts
+│   ├── comparison.py        # model comparison
+│   └── backtesting.py       # backtesting
 │
-└── utils/                   # Utility functions
+└── utils/                   # other functions
     ├── __init__.py
-    ├── sktime_utils.py      # sktime integration
-    ├── visualization.py     # Plotting functions
-    └── reporting.py         # Report generation
+    ├── sktime_utils.py      # convert to sktime format
+    └── visualization.py     # plotting functions
 ```
 
 ## Tests
