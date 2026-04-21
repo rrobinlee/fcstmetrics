@@ -1,13 +1,18 @@
 # fcstmetrics
 
-Python-based library to consolidate and streamline forecast diagnostics and validation tests, including residual analysis and out-of-sample metrics.
+A Python library for time series diagnostics, such as residual analysis, out-of-sample metrics, and exploratory data analysis. Consolidated useful functions and modules from previous college projects and assignments into a single reusable framework.
 
 ## Installation
 
 ```bash
 cd /path/to/fcstmetrics
 pip install -e .
-pip install -e ".[sktime,viz]"
+```
+
+Jupyter:
+```{python}
+!pip install /path/to/fcstmetrics
+!pip install git+https://github.com/rrobinlee/fcstmetrics.git
 ```
 
 ## Structure
@@ -15,27 +20,27 @@ pip install -e ".[sktime,viz]"
 ```
 fcstmetrics/
 │
-├── __init__.py              # main imports
-├── api.py                   # quick-access functions
+├── __init__.py              
+├── api.py                
 │
-├── core/                    # core components
+├── core/                   
 │   ├── __init__.py
-│   ├── framework.py         # main framework
-│   ├── validators.py        # residual and stationarity tests
-│   ├── metrics.py           # performance metrics
-│   └── results.py           # validation summary
+│   ├── framework.py      
+│   ├── validators.py      
+│   ├── metrics.py      
+│   └── results.py        
 │
-├── extensions/              # other features
+├── extensions/           
 │   ├── __init__.py
-│   ├── cross_validation.py  # cross-validation
-│   ├── probabilistic.py     # probabilistic forecasts
-│   ├── comparison.py        # model comparison
-│   └── backtesting.py       # backtesting
+│   ├── cross_validation.py 
+│   ├── probabilistic.py  
+│   ├── comparison.py       
+│   └── backtesting.py   
 │
-└── utils/                   # other functions
+└── utils/                  
     ├── __init__.py
-    ├── sktime_utils.py      # convert to sktime format
-    └── visualization.py     # plotting functions
+    ├── sktime_utils.py    
+    └── visualization.py    
 ```
 
 ## Tests
@@ -67,7 +72,7 @@ fcstmetrics/
 | **RMSE** | Root Mean Squared Error | Lower is better |
 | **MAE** | Mean Absolute Error | Lower is better |
 | **MAPE** | Mean Absolute Percentage Error | < 10% excellent, < 20% good |
-| **R²** | Coefficient of Determination | > 0.7 good, > 0.9 excellent |
+| **R2** | Coefficient of Determination | > 0.7 good, > 0.9 excellent |
 | **NRMSE** | Normalized RMSE | < 0.5 acceptable |
 | **Directional Accuracy** | % of correct direction predictions | > 50% better than random |
 | **Bias** | Mean residual | Close to 0 |
