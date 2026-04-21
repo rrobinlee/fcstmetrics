@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
-from typing import Optional, Tuple
+import math
+from typing import Optional, List, Tuple
 import matplotlib.pyplot as plt
 from scipy import stats
 
@@ -72,6 +73,47 @@ def plot_eda(series: pd.Series, timestamps: Optional[pd.DatetimeIndex] = None) -
 
     plt.tight_layout()
     plt.close(fig)
+    return fig
+
+def plot_exog(primary_series: pd.Series, exog_df: pd.DataFrame, exog_cols: Optional[List[str]] = None,
+              ncols: int = 2, figsize_per_plot: Tuple[int, int] = (8, 5), title: Optional[str] = None,
+              primary_color: str = '#3498DB', secondary_color: str = '#E74C3C') -> plt.Figure:
+    exog_cols = exog_cols or list(exog_df.columns)
+    if not exog_cols:
+        raise ValueError("exog_df has no columns to plot.")
+    if missing := [c for c in exog_cols if c not in exog_df.columns]:
+        raise ValueError(f"Columns not found in exog_df: {missing}")
+    primary_name = getattr(primary_series, 'name', None) or 'Primary'
+    plot_title = title or f'{primary_name} vs Exogenous Variables'
+    ncols = min(ncols, len(exog_cols))
+    nrows = math.ceil(len(exog_cols) / ncols)
+    figsize = (figsize_per_plot[0] * ncols, figsize_per_plot[1] * nrows)
+
+    fig, axes = plt.subplots(nrows, ncols, figsize=figsize)
+    plt.close(fig)
+    axes = np.array(axes).flatten()
+
+    for ax, col in zip(axes, exog_cols):
+        ax2 = ax.twinx()
+        ax.plot(primary_series.index, primary_series, color=primary_color,
+                alpha=0.5, linewidth=1.5, label=primary_name)
+        ax2.plot(exog_df.index, exog_df[col], color=secondary_color,
+                 linewidth=1.5, label=col)
+        ax.set_title(f'{primary_name} vs {col}', fontsize=13, fontweight='bold')
+        ax.set_ylabel(primary_name, color=primary_color, fontsize=10)
+        ax2.set_ylabel(col, color=secondary_color, fontsize=10)
+        ax.tick_params(axis='y', labelcolor=primary_color)
+        ax2.tick_params(axis='y', labelcolor=secondary_color)
+        lines1, labels1 = ax.get_legend_handles_labels()
+        lines2, labels2 = ax2.get_legend_handles_labels()
+        ax.legend(lines1 + lines2, labels1 + labels2, fontsize=9)
+        ax.grid(True, alpha=0.3)
+
+    for ax in axes[len(exog_cols):]:
+        ax.set_visible(False)
+
+    fig.suptitle(plot_title, fontsize=15, fontweight='bold')
+    plt.tight_layout()
     return fig
 
 def plot_residuals(residuals: np.ndarray, timestamps: Optional[pd.DatetimeIndex] = None,
