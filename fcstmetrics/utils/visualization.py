@@ -10,6 +10,12 @@ sns.set_palette("husl")
 pd.set_option('display.max_columns', None)
 pd.set_option('display.precision', 4)
 
+def to_dt(series):
+    s = series.copy()
+    if isinstance(s.index, pd.PeriodIndex):
+        s.index = s.index.to_timestamp()
+    return s
+    
 def plot_eda(series: pd.Series, timestamps: Optional[pd.DatetimeIndex] = None) -> plt.Figure:
     series_name = getattr(series, 'name', None) or 'Value'
 
@@ -21,7 +27,6 @@ def plot_eda(series: pd.Series, timestamps: Optional[pd.DatetimeIndex] = None) -
     print(f"Inferred freq: {series.index.freq}")
     
     fig, axes = plt.subplots(2, 2, figsize=(16, 10))
-    plt.close(fig)
     
     x_axis = timestamps if timestamps is not None else np.arange(len(series))
     series_vals = series.values if hasattr(series, 'values') else series
@@ -85,7 +90,6 @@ def plot_eda(series: pd.Series, timestamps: Optional[pd.DatetimeIndex] = None) -
     axes[1, 1].grid(True, alpha=0.3)
 
     plt.tight_layout()
-    plt.close(fig)
     return fig
 
 def plot_exog(primary_series: pd.Series, exog_df: pd.DataFrame, exog_cols: Optional[List[str]] = None,
@@ -109,7 +113,6 @@ def plot_exog(primary_series: pd.Series, exog_df: pd.DataFrame, exog_cols: Optio
     figsize = (figsize_per_plot[0] * ncols, figsize_per_plot[1] * nrows)
 
     fig, axes = plt.subplots(nrows, ncols, figsize=figsize)
-    plt.close(fig)
     axes = np.array(axes).flatten()
 
     for ax, col in zip(axes, exog_cols):
@@ -140,7 +143,6 @@ def plot_residuals(residuals: np.ndarray, timestamps: Optional[pd.DatetimeIndex]
                    title: str = "Residual Analysis") -> plt.Figure:
     residuals = np.asarray(residuals)  
     fig, axes = plt.subplots(2, 2, figsize=figsize)
-    plt.close(fig)  
     x_axis = timestamps if timestamps is not None else np.arange(len(residuals))
 
     axes[0, 0].plot(x_axis, residuals, linewidth=1.5, alpha=0.7)
@@ -188,7 +190,6 @@ def plot_predictions(y_true: np.ndarray, y_pred: np.ndarray, timestamps: Optiona
     if train_test_split is not None and not (0 < train_test_split < len(y_true)):
         raise ValueError(f"train_test_split ({train_test_split}) must be between 0 and {len(y_true)}")
     fig, ax = plt.subplots(figsize=figsize)
-    plt.close(fig)
     x_axis = timestamps if timestamps is not None else np.arange(len(y_true))
     ax.plot(x_axis, y_true, linewidth=2, label='Actual', alpha=0.7)
     ax.plot(x_axis, y_pred, linewidth=2, label='Predicted', alpha=0.7, linestyle='--')
@@ -205,11 +206,13 @@ def plot_predictions(y_true: np.ndarray, y_pred: np.ndarray, timestamps: Optiona
 
 def plot_predictions_full(y_train: pd.Series, y_test: pd.Series, y_pred: np.ndarray, figsize: Tuple[int, int] = (14, 6),
                           title: str = "Predictions vs Actuals", name: str = "Model", ylabel: str = "Value") -> plt.Figure:
+    y_train=to_dt(y_train)
+    y_test=to_dt(y_test)
+    y_pred=to_dt(y_pred)
     y_pred = np.asarray(y_pred)
     if len(y_test) != len(y_pred):
         raise ValueError(f"y_test and y_pred must have the same length, got {len(y_test)} and {len(y_pred)}")
     fig, ax = plt.subplots(figsize=figsize)
-    plt.close(fig)
     ax.plot(y_train.index, y_train, linewidth=2, label='Training Data', alpha=0.7, color='gray')
     ax.plot(y_test.index, y_test, linewidth=2, label='Actual', color='#2C3E50')
     ax.plot(y_test.index, y_pred, linewidth=2, label='Predicted', linestyle='--', marker='o', markersize=4)
@@ -233,7 +236,6 @@ def plot_diagnostics(y_train: np.ndarray, y_train_pred: np.ndarray, y_test: np.n
     if len(y_test) != len(y_test_pred):
         raise ValueError(f"y_test and y_test_pred must have the same length, got {len(y_test)} and {len(y_test_pred)}")
     fig = plt.figure(figsize=figsize)
-    plt.close(fig)
     gs = fig.add_gridspec(3, 2, hspace=0.4, wspace=0.3)
                          
     for ax, y_true, y_pred, label in [(fig.add_subplot(gs[0, 0]), y_train, y_train_pred, 'Training Set'),
