@@ -1,8 +1,10 @@
 from setuptools import setup, find_packages
 
 setup(name="fcstmetrics",
-      python_requires=">=3.7",
-      packages=find_packages(exclude=['notebooks', 'notebooks.*']),
+      version="0.1.0",
+      author="Robin Lee",
+      python_requires=">=3.9",
+      packages=find_packages(exclude=["notebooks", "notebooks.*", "tests", "tests.*"]),
       install_requires=["numpy>=1.20.0", 
                         "pandas>=1.3.0", 
                         "scipy>=1.7.0", 
