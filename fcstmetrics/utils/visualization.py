@@ -4,6 +4,11 @@ import math
 from typing import Optional, List, Tuple
 import matplotlib.pyplot as plt
 from scipy import stats
+import seaborn as sns
+plt.style.use('seaborn-v0_8-darkgrid')
+sns.set_palette("husl")
+pd.set_option('display.max_columns', None)
+pd.set_option('display.precision', 4)
 
 def plot_eda(series: pd.Series, timestamps: Optional[pd.DatetimeIndex] = None) -> plt.Figure:
     series_name = getattr(series, 'name', None) or 'Value'
@@ -174,8 +179,8 @@ def plot_residuals(residuals: np.ndarray, timestamps: Optional[pd.DatetimeIndex]
     return fig
 
 def plot_predictions(y_true: np.ndarray, y_pred: np.ndarray, timestamps: Optional[pd.DatetimeIndex] = None,
-                     train_test_split: Optional[int] = None,
-                     figsize: Tuple[int, int] = (14, 6), title: str = "Predictions vs Actuals") -> plt.Figure:
+                     train_test_split: Optional[int] = None, figsize: Tuple[int, int] = (14, 6), 
+                     name: str = "Model", title: str = "Predictions vs Actuals") -> plt.Figure:
     y_true = np.asarray(y_true)
     y_pred = np.asarray(y_pred)
     if len(y_true) != len(y_pred):
@@ -185,12 +190,12 @@ def plot_predictions(y_true: np.ndarray, y_pred: np.ndarray, timestamps: Optiona
     fig, ax = plt.subplots(figsize=figsize)
     plt.close(fig)
     x_axis = timestamps if timestamps is not None else np.arange(len(y_true))
-    ax.plot(x_axis, y_true, linewidth=2, label='Actual', alpha=0.8)
-    ax.plot(x_axis, y_pred, linewidth=2, label='Predicted', alpha=0.8, linestyle='--')
+    ax.plot(x_axis, y_true, linewidth=2, label='Actual', alpha=0.7)
+    ax.plot(x_axis, y_pred, linewidth=2, label='Predicted', alpha=0.7, linestyle='--')
     if train_test_split is not None:
         split_x = x_axis[train_test_split]
         ax.axvline(x=split_x, color='red', linestyle='--', linewidth=2, alpha=0.7, label='Train/Test Split')
-    ax.set_title(title, fontsize=14, fontweight='bold')
+    ax.set_title(f'{name} - {title}', fontsize=13, fontweight='bold')
     ax.set_xlabel('Time' if timestamps is not None else 'Index', fontsize=11)
     ax.set_ylabel('Value', fontsize=11)
     ax.legend(fontsize=10)
@@ -198,8 +203,26 @@ def plot_predictions(y_true: np.ndarray, y_pred: np.ndarray, timestamps: Optiona
     plt.tight_layout()
     return fig
 
-def plot_diagnostics(y_train: np.ndarray, y_train_pred: np.ndarray,
-                     y_test: np.ndarray, y_test_pred: np.ndarray,
+def plot_predictions_full(y_train: pd.Series, y_test: pd.Series, y_pred: np.ndarray, figsize: Tuple[int, int] = (14, 6),
+                          title: str = "Predictions vs Actuals", name: str = "Model", ylabel: str = "Value") -> plt.Figure:
+    y_pred = np.asarray(y_pred)
+    if len(y_test) != len(y_pred):
+        raise ValueError(f"y_test and y_pred must have the same length, got {len(y_test)} and {len(y_pred)}")
+    fig, ax = plt.subplots(figsize=figsize)
+    plt.close(fig)
+    ax.plot(y_train.index, y_train, linewidth=2, label='Training Data', alpha=0.7, color='gray')
+    ax.plot(y_test.index, y_test, linewidth=2, label='Actual', color='#2C3E50')
+    ax.plot(y_test.index, y_pred, linewidth=2, label='Predicted', linestyle='--', marker='o', markersize=4)
+    ax.axvline(x=y_test.index[0], color='red', linestyle='--', alpha=0.7, linewidth=1)
+    ax.set_title(f'{name} - {title}', fontsize=13, fontweight='bold')
+    ax.set_xlabel('Time', fontsize=11)
+    ax.set_ylabel(ylabel, fontsize=11)
+    ax.legend(fontsize=10)
+    ax.grid(True, alpha=0.3)
+    plt.tight_layout()
+    return fig
+
+def plot_diagnostics(y_train: np.ndarray, y_train_pred: np.ndarray, y_test: np.ndarray, y_test_pred: np.ndarray,
                      figsize: Tuple[int, int] = (14, 12)) -> plt.Figure:
     y_train = np.asarray(y_train)
     y_train_pred = np.asarray(y_train_pred)
@@ -209,16 +232,14 @@ def plot_diagnostics(y_train: np.ndarray, y_train_pred: np.ndarray,
         raise ValueError(f"y_train and y_train_pred must have the same length, got {len(y_train)} and {len(y_train_pred)}")
     if len(y_test) != len(y_test_pred):
         raise ValueError(f"y_test and y_test_pred must have the same length, got {len(y_test)} and {len(y_test_pred)}")
-
     fig = plt.figure(figsize=figsize)
     plt.close(fig)
-
     gs = fig.add_gridspec(3, 2, hspace=0.4, wspace=0.3)
-
+                         
     for ax, y_true, y_pred, label in [(fig.add_subplot(gs[0, 0]), y_train, y_train_pred, 'Training Set'),
                                       (fig.add_subplot(gs[0, 1]), y_test,  y_test_pred,  'Test Set')]:
-        ax.plot(y_true, linewidth=2, label='Actual', alpha=0.8)
-        ax.plot(y_pred, linewidth=2, label='Predicted', alpha=0.8, linestyle='--')
+        ax.plot(y_true, linewidth=2, label='Actual', alpha=0.7)
+        ax.plot(y_pred, linewidth=2, label='Predicted', alpha=0.7, linestyle='--')
         ax.set_title(label, fontsize=12, fontweight='bold')
         ax.set_xlabel('Index')
         ax.set_ylabel('Value')
