@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import warnings
+import matplotlib.pyplot as plt
 from typing import Union, Optional, Tuple, Dict
 
 def convert_to_sktime_format(data: Union[pd.DataFrame, pd.Series, np.ndarray], freq: Optional[str] = None,
@@ -37,7 +38,7 @@ def convert_to_sktime_format(data: Union[pd.DataFrame, pd.Series, np.ndarray], f
 
 def prepare_sktime_train_test(data: Union[pd.Series, np.ndarray], train_size: Optional[Union[int, float]] = None,
                               test_size: Optional[Union[int, float]] = None, freq: Optional[str] = None,
-                              start_date: Optional[Union[str, pd.Timestamp]] = None) -> Tuple[pd.Series, pd.Series]:
+                              start_date: Optional[Union[str, pd.Timestamp]] = None, include_plot = False) -> Tuple[pd.Series, pd.Series]:
     series = convert_to_sktime_format(data, freq=freq, start_date=start_date)
     n = len(series)
     if train_size is not None:
@@ -58,6 +59,18 @@ def prepare_sktime_train_test(data: Union[pd.Series, np.ndarray], train_size: Op
         split_idx = int(n * 0.8)
     y_train = series.iloc[:split_idx]
     y_test = series.iloc[split_idx:]
+    if include_plot:
+        plt.figure(figsize=(14, 6))
+        plt.plot(y_train.index, y_train, linewidth=2, label='Training Data', color='#3498DB')
+        plt.plot(y_test.index, y_test, linewidth=2, label='Test Data', color='#E74C3C')
+        plt.axvline(x=y_test.index[0], color='black', linestyle='--', linewidth=2, alpha=0.7, label='Split Point')
+        plt.title('Train/Test Split', fontsize=14, fontweight='bold')
+        plt.xlabel('Date', fontsize=11)
+        plt.ylabel(f'{data.name}', fontsize=11)
+        plt.legend(fontsize=10)
+        plt.grid(True, alpha=0.3)
+        plt.tight_layout()
+        plt.show()
     return y_train, y_test
 
 def create_sktime_dataset_from_arrays(y_train: np.ndarray, y_test: np.ndarray, y_train_pred: np.ndarray, y_test_pred: np.ndarray,
