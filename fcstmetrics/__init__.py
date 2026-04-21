@@ -7,7 +7,7 @@ from .extensions.probabilistic import ProbabilisticValidator
 from .extensions.comparison import ModelComparator
 from .extensions.backtesting import (BacktestingFramework, BacktestResults)
 from .utils.sktime_utils import (convert_to_sktime_format, prepare_sktime_train_test, create_sktime_dataset_from_arrays)
-from .utils.visualization import (plot_eda, plot_exog, plot_residuals, plot_predictions, plot_diagnostics)
+from .utils.visualization import (plot_eda, plot_exog, plot_residuals, plot_predictions, plot_predictions_full, plot_diagnostics)
 from .api import (quick_validate, validate_forecast, compare_models,run_backtest)
 
 __all__ = ['BaseValidator',
@@ -33,6 +33,7 @@ __all__ = ['BaseValidator',
            'plot_exog',
            'plot_residuals',
            'plot_predictions',
+           'plot_predictions_full',
            'plot_diagnostics',
            
            'quick_validate',
