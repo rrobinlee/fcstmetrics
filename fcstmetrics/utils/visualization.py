@@ -7,6 +7,14 @@ from scipy import stats
 
 def plot_eda(series: pd.Series, timestamps: Optional[pd.DatetimeIndex] = None) -> plt.Figure:
     series_name = getattr(series, 'name', None) or 'Value'
+
+    print(f"Mean {series_name}: {series.mean():.2f}%")
+    print(f"Min {series_name}: {series.min():.2f}% ({series.idxmin()})")
+    print(f"Max {series_name}: {series.max():.2f}% ({series.idxmax()})")
+    print(f"Standard deviation: {series.std():.2f}%")
+    series.index.freq = pd.infer_freq(series.index)
+    print(f"Inferred freq: {series.index.freq}")
+    
     fig, axes = plt.subplots(2, 2, figsize=(16, 10))
     plt.close(fig)
     
@@ -78,6 +86,12 @@ def plot_eda(series: pd.Series, timestamps: Optional[pd.DatetimeIndex] = None) -
 def plot_exog(primary_series: pd.Series, exog_df: pd.DataFrame, exog_cols: Optional[List[str]] = None,
               ncols: int = 2, figsize_per_plot: Tuple[int, int] = (8, 5), title: Optional[str] = None,
               primary_color: str = '#3498DB', secondary_color: str = '#E74C3C') -> plt.Figure:
+                  
+    primary_series_name = getattr(primary_series, 'name', None) or 'Value'              
+    combined = pd.concat([primary_series, exog_df], axis=1)
+    print(f"\nCorrelation with {primary_series_name}:")
+    print(combined.corr()[f'{primary_series_name}'].drop(f'{primary_series_name}').sort_values(ascending=False).to_string())
+
     exog_cols = exog_cols or list(exog_df.columns)
     if not exog_cols:
         raise ValueError("exog_df has no columns to plot.")
