@@ -86,6 +86,6 @@ class ModelValidationFramework:
             print("Warnings:")
             print("-" * 80)
             for warning in self.report.warnings:
-                print(f"  • {warning}")
+                print(f"  - {warning}")
             print()
         print("=" * 80)
