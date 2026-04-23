@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 from typing import Generator, Tuple, List, Optional
 from dataclasses import dataclass, field
-from ..core.results import ValidationReport
+from ..core.results import Output
 from ..core.framework import ModelValidationFramework
 
 class TimeSeriesCrossValidator:
@@ -65,10 +65,10 @@ class TimeSeriesCrossValidator:
 
 @dataclass
 class CrossValidationResults:
-    fold_reports: List[ValidationReport] = field(default_factory=list)
+    fold_reports: List[Output] = field(default_factory=list)
     aggregate_metrics: dict = field(default_factory=dict)
     
-    def add_fold_report(self, report: ValidationReport):
+    def add_fold_report(self, report: Output):
         self.fold_reports.append(report)
     
     def compute_aggregates(self):

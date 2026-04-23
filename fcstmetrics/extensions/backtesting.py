@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 from typing import List, Dict, Any, Callable, Optional
 from dataclasses import dataclass
-from ..core.results import ValidationReport
+from ..core.results import Output
 from ..core.framework import ModelValidationFramework
 
 @dataclass
@@ -10,7 +10,7 @@ class BacktestResults:
     predictions: List[np.ndarray]
     actuals: List[np.ndarray]
     timestamps: List
-    validation_report: ValidationReport
+    validation_report: Output
     metadata: Dict[str, Any]
     
     def to_dataframe(self) -> pd.DataFrame:

@@ -1,6 +1,6 @@
 from .core.validators import (BaseValidator, ResidualValidator, StationarityValidator, AdvancedResidualValidator)
 from .core.metrics import MetricsCalculator
-from .core.results import (ValidationResult, ValidationReport)
+from .core.results import (Result, Output)
 from .core.framework import ModelValidationFramework
 from .extensions.cross_validation import (TimeSeriesCrossValidator, CrossValidationResults)
 from .extensions.probabilistic import ProbabilisticValidator
@@ -15,8 +15,8 @@ __all__ = ['BaseValidator',
            'StationarityValidator',
            'AdvancedResidualValidator',
            'MetricsCalculator',
-           'ValidationResult',
-           'ValidationReport',
+           'Result',
+           'Output',
            'ModelValidationFramework',
            
            'TimeSeriesCrossValidator',
