@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 from ..core.results import Output
 from ..core.framework import ModelValidationFramework
 
-class TimeSeriesCrossValidator:
+class CrossValidator:
     def __init__(self, n_splits: int = 5, strategy: str = 'expanding', gap: int = 0, test_size: Optional[int] = None):
         self.n_splits = n_splits
         self.strategy = strategy
@@ -111,7 +111,7 @@ class CrossValidationResults:
         n_folds = len(self.fold_reports)
         return f"CrossValidationResults(n_folds={n_folds})"
 
-def cross_validate_model(y: np.ndarray, y_pred_all: np.ndarray, cv: TimeSeriesCrossValidator, 
+def cross_validate_model(y: np.ndarray, y_pred_all: np.ndarray, cv: CrossValidator, 
                          model_name: str = "Model") -> CrossValidationResults:
     results = CrossValidationResults()
     for fold_idx, (train_idx, test_idx) in enumerate(cv.split(y)):

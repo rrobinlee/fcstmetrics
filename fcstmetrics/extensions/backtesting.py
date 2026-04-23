@@ -102,10 +102,10 @@ def _extract_forecast(forecast_raw: Any, horizon: int) -> Optional[np.ndarray]:
 
 # backtest_with_predictions - evaluate pre-computed forecasts
 # backtest_with_model - predict inside the loop
-class BacktestingFramework:
+class Backtester:
     def __init__(self, initial_window: int, step_size: int = 1, forecasting_horizon: int = 1, refit_frequency: int = 1, raise_on_error: bool = False) -> None:
         if initial_window < 1:
-            raise ValueError("initial_window must be >= 1.)
+            raise ValueError("initial_window must be >= 1")
         if step_size < 1:
             raise ValueError("step_size must be >= 1")
         if forecasting_horizon < 1:
