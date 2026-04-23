@@ -1,91 +1,145 @@
+import sys
 import numpy as np
-from typing import Optional
+from typing import Optional, IO
 from .validators import ResidualValidator, StationarityValidator
 from .metrics import MetricsCalculator
-from .results import ValidationReport
+from .results import Output
+
 
 class ModelValidationFramework:
-    def __init__(self, model_name: str = "Model", alpha: float = 0.05, max_lags: int = 10):
+    def __init__(self, model_name: str = "Model", alpha: float = 0.05, max_lags: int = 10, mape_warn_threshold: float = 15.0, r2_warn_threshold: float = 0.3):
         self.model_name = model_name
         self.alpha = alpha
         self.max_lags = max_lags
-        self.residual_validator = ResidualValidator(alpha, max_lags)
-        self.stationarity_validator = StationarityValidator(alpha)
-        self.metrics_calculator = MetricsCalculator()
-        self.report = ValidationReport(model_name=model_name)
-        
-    def validate_residuals(self, residuals: np.ndarray) -> 'ModelValidationFramework':
-        results = self.residual_validator.validate(residuals)
-        for result in results:
-            self.report.add_result(result)
+        self.mape_warn_threshold = mape_warn_threshold
+        self.r2_warn_threshold = r2_warn_threshold
+        self._residual_validator = ResidualValidator(alpha, max_lags)
+        self._stationarity_validator = StationarityValidator(alpha)
+        self._metrics_calculator = MetricsCalculator()
+        self.report = Output(model_name=model_name)
+
+    def reset(self) -> "ModelValidationFramework":
+        self.report = Output(model_name=self.model_name)
         return self
-        
-    def validate_stationarity(self, series: np.ndarray) -> 'ModelValidationFramework':
-        results = self.stationarity_validator.validate(series)
-        for result in results:
+
+    def validate_residuals(self, residuals: np.ndarray) -> "ModelValidationFramework":
+        residuals = self._coerce_1d(residuals, "residuals")
+        for result in self._residual_validator.validate(residuals):
             self.report.add_result(result)
+        self._generate_test_warnings()
         return self
-        
-    def calculate_metrics(self, y_true: np.ndarray, y_pred: np.ndarray, prefix: str = "") -> 'ModelValidationFramework':
-        metrics = self.metrics_calculator.calculate_all_metrics(y_true, y_pred, prefix)
+
+    def validate_stationarity(self, series: np.ndarray) -> "ModelValidationFramework":
+        series = self._coerce_1d(series, "series")
+        for result in self._stationarity_validator.validate(series):
+            self.report.add_result(result)
+        self._generate_test_warnings()
+        return self
+
+    def calculate_metrics(self, y_true: np.ndarray, y_pred: np.ndarray, prefix: str = "") -> "ModelValidationFramework":
+        y_true, y_pred = self._coerce_matched_1d(y_true, y_pred, prefix or "arrays")
+        metrics = self._metrics_calculator.calculate_all_metrics(y_true, y_pred, prefix)
         for name, value in metrics.items():
             self.report.add_metric(name, value)
+        self._generate_metric_warnings()
         return self
-        
-    def run_comprehensive_validation(self, y_train: np.ndarray, y_train_pred: np.ndarray, y_test: Optional[np.ndarray] = None,
-                                     y_test_pred: Optional[np.ndarray] = None, check_stationarity: bool = True) -> ValidationReport:
+
+    def run_comprehensive_validation(self, y_train: np.ndarray, y_train_pred: np.ndarray, y_test: Optional[np.ndarray] = None, 
+                                     y_test_pred: Optional[np.ndarray] = None, check_stationarity: bool = True) -> Output:
+        self.reset()
         self.calculate_metrics(y_train, y_train_pred, prefix="train_")
-        if y_test is not None and y_test_pred is not None:
+        if (y_test is None) != (y_test_pred is None):
+            raise ValueError("Provide both y_test and y_test_pred, or neither.")
+        if y_test is not None:
             self.calculate_metrics(y_test, y_test_pred, prefix="test_")
-        train_residuals = np.asarray(y_train).flatten() - np.asarray(y_train_pred).flatten()
+        train_residuals = (self._coerce_1d(y_train, "y_train") - self._coerce_1d(y_train_pred, "y_train_pred"))
         self.validate_residuals(train_residuals)
         if check_stationarity:
             self.validate_stationarity(y_train)
-        self._generate_warnings()
         return self.report
-        
-    def _generate_warnings(self):
+
+    def get_report(self) -> Output:
+        return self.report
+
+    def to_dict(self) -> dict:
+        return {"model_name": self.report.model_name,
+                "timestamp": str(self.report.timestamp),
+                "metrics": {k: (float(v) if isinstance(v, (np.floating, np.integer)) else v) for k, v in self.report.metrics.items()},
+                "tests": [{"name": r.test_name,
+                           "passed": r.passed,
+                           "p_value": (float(r.p_value) if r.p_value is not None else None)} 
+                          for r in self.report.results],
+                "warnings": list(self.report.warnings)}
+
+    def print_summary(self, file: IO = sys.stdout) -> None:
+        sep = "=" * 80
+        thin = "-" * 80
+        def p(line: str = "") -> None:
+            print(line, file=file)
+        p(sep)
+        p(f"Evaluation Summary: {self.model_name}")
+        p(sep)
+        p(f"Timestamp: {self.report.timestamp}")
+        p()
+        if self.report.metrics:
+            p("Metrics:")
+            p(thin)
+            for name, value in sorted(self.report.metrics.items()):
+                if isinstance(value, float) and not np.isnan(value):
+                    p(f"  {name:30s}: {value:12.4f}")
+                else:
+                    p(f"  {name:30s}: {value}")
+            p()
+        if self.report.results:
+            p("Tests:")
+            p(thin)
+            for result in self.report.results:
+                p(f"  {result}")
+            p()
+        if self.report.warnings:
+            p("Warnings:")
+            p(thin)
+            for warning in self.report.warnings:
+                p(f"  {warning}")
+            p()
+
+        p(sep)
+
+    @staticmethod
+    def _coerce_1d(arr: np.ndarray, name: str) -> np.ndarray:
+        arr = np.asarray(arr, dtype=float).flatten()
+        if arr.ndim != 1 or arr.size == 0:
+            raise ValueError(f"'{name}' must be a non-empty 1-D array.")
+        return arr
+
+    def _coerce_matched_1d(self, y_true: np.ndarray, y_pred: np.ndarray, label: str) -> tuple[np.ndarray, np.ndarray]:
+        y_true = self._coerce_1d(y_true, f"{label} y_true")
+        y_pred = self._coerce_1d(y_pred, f"{label} y_pred")
+        if y_true.shape != y_pred.shape:
+            raise ValueError(
+                f"Shape mismatch for '{label}': "
+                f"y_true={y_true.shape}, y_pred={y_pred.shape}."
+            )
+        return y_true, y_pred
+
+    def _generate_test_warnings(self) -> None:
         for result in self.report.results:
             if result.passed is False:
-                warning = f"Failed: {result.test_name}"
+                msg = f"Failed: {result.test_name}"
                 if result.p_value is not None:
-                    warning += f" (p-value: {result.p_value:.4f})"
-                self.report.add_warning(warning)
-        if 'test_MAPE' in self.report.metrics:
-            if self.report.metrics['test_MAPE'] > 10:
-                self.report.add_warning(f"High MAPE on test set: {self.report.metrics['test_MAPE']:.2f}%")
-        if 'test_R2' in self.report.metrics:
-            if self.report.metrics['test_R2'] < 0.5:
-                self.report.add_warning(f"Low R2 on test set: {self.report.metrics['test_R2']:.4f}")
-                
-    def get_report(self) -> ValidationReport:
-        return self.report
-        
-    def print_summary(self):
-        print("=" * 80)
-        print(f"Model Validation Summary: {self.model_name}")
-        print("=" * 80)
-        print(f"Timestamp: {self.report.timestamp}")
-        print()
-        if self.report.metrics:
-            print("Performance Metrics:")
-            print("-" * 80)
-            for name, value in sorted(self.report.metrics.items()):
-                if isinstance(value, (int, float)) and not np.isnan(value):
-                    print(f"  {name:30s}: {value:12.4f}")
-                else:
-                    print(f"  {name:30s}: {value}")
-            print()
-        if self.report.results:
-            print("Diagnostic Tests:")
-            print("-" * 80)
-            for result in self.report.results:
-                print(f"  {result}")
-            print()
-        if self.report.warnings:
-            print("Warnings:")
-            print("-" * 80)
-            for warning in self.report.warnings:
-                print(f"  - {warning}")
-            print()
-        print("=" * 80)
+                    msg += f" (p={result.p_value:.4f})"
+                if msg not in self.report.warnings:
+                    self.report.add_warning(msg)
+
+    def _generate_metric_warnings(self) -> None:
+        mape = self.report.metrics.get("test_MAPE")
+        if mape is not None and mape > self.mape_warn_threshold:
+            msg = f"High MAPE on test set: {mape:.2f}% (threshold: {self.mape_warn_threshold}%)"
+            if msg not in self.report.warnings:
+                self.report.add_warning(msg)
+
+        r2 = self.report.metrics.get("test_R2")
+        if r2 is not None and r2 < self.r2_warn_threshold:
+            msg = f"Low R2 on test set: {r2:.4f} (threshold: {self.r2_warn_threshold})"
+            if msg not in self.report.warnings:
+                self.report.add_warning(msg)

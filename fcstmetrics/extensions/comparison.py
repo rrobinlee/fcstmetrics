@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 from typing import Dict, Tuple, Optional
 from scipy.stats import t
-from ..core.results import ValidationResult, ValidationReport
+from ..core.results import Result, Output
 
 class ModelComparator:
     def __init__(self):
@@ -37,7 +37,7 @@ class ModelComparator:
             df = df.sort_values('avg_rank')
         return df
     
-    def diebold_mariano_test(self, model1: str, model2: str, loss_function: str = 'squared') -> ValidationResult:
+    def diebold_mariano_test(self, model1: str, model2: str, loss_function: str = 'squared') -> Result:
         y_true = self.models[model1]['y_test']
         pred1 = self.models[model1]['y_test_pred']
         pred2 = self.models[model2]['y_test_pred']
@@ -61,7 +61,7 @@ class ModelComparator:
             better_model = model2
             interpretation = f"{model2} has significantly lower {loss_function} error"
         
-        return ValidationResult(test_name=f"Diebold-Mariano: {model1} vs {model2}", statistic=dm_stat, p_value=p_value, passed=p_value < 0.05,
+        return Result(test_name=f"Diebold-Mariano: {model1} vs {model2}", statistic=dm_stat, p_value=p_value, passed=p_value < 0.05,
                                 metadata={'interpretation': interpretation if p_value < 0.05 else 'No significant difference',
                                           'better_model': better_model if p_value < 0.05 else 'tie', 'loss_function': loss_function})
     
@@ -117,7 +117,7 @@ class ModelComparator:
                 report += "\n"
         return report
     
-    def get_best_model(self, criterion: str = 'test_RMSE') -> Tuple[str, ValidationReport]:
+    def get_best_model(self, criterion: str = 'test_RMSE') -> Tuple[str, Output]:
         comparison = self.compare_metrics([criterion])
         if any(err in criterion.lower() for err in ['mse', 'rmse', 'mae', 'mape', 'error']):
             best_model = comparison[criterion].idxmin()
