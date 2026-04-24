@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 import math
-from typing import Optional, List, Tuple
+from typing import Optional, List, Tuple, Union
 import matplotlib.pyplot as plt
 from scipy import stats
 import seaborn as sns
@@ -18,7 +18,6 @@ def to_dt(series):
     
 def plot_eda(series: pd.Series, timestamps: Optional[pd.DatetimeIndex] = None) -> plt.Figure:
     series_name = getattr(series, 'name', None) or 'Value'
-
     print(f"Mean {series_name}: {series.mean():.2f}%")
     print(f"Min {series_name}: {series.min():.2f}% ({series.idxmin()})")
     print(f"Max {series_name}: {series.max():.2f}% ({series.idxmax()})")
@@ -27,10 +26,8 @@ def plot_eda(series: pd.Series, timestamps: Optional[pd.DatetimeIndex] = None) -
     print(f"Inferred freq: {series.index.freq}")
     
     fig, axes = plt.subplots(2, 2, figsize=(16, 10))
-    
     x_axis = timestamps if timestamps is not None else np.arange(len(series))
     series_vals = series.values if hasattr(series, 'values') else series
-
     axes[0, 0].plot(x_axis, series_vals, linewidth=2, color='#2C3E50')
     axes[0, 0].fill_between(x_axis, series_vals, alpha=0.3, color='#3498DB')
     axes[0, 0].set_title(series_name, fontsize=14, fontweight='bold')
@@ -103,7 +100,7 @@ def plot_exog(primary_series: pd.Series, exog_df: pd.DataFrame, exog_cols: Optio
 
     exog_cols = exog_cols or list(exog_df.columns)
     if not exog_cols:
-        raise ValueError("exog_df has no columns to plot.")
+        raise ValueError("exog_df has no columns to plot")
     if missing := [c for c in exog_cols if c not in exog_df.columns]:
         raise ValueError(f"Columns not found in exog_df: {missing}")
     primary_name = getattr(primary_series, 'name', None) or 'Primary'
@@ -180,25 +177,23 @@ def plot_residuals(residuals: np.ndarray, timestamps: Optional[pd.DatetimeIndex]
     plt.tight_layout()
     return fig
 
-def plot_predictions(y_true: np.ndarray, y_pred: np.ndarray, timestamps: Optional[pd.DatetimeIndex] = None,
-                     train_test_split: Optional[int] = None, figsize: Tuple[int, int] = (14, 6), 
-                     name: str = "Model", title: str = "Predictions vs Actuals") -> plt.Figure:
-    y_true = np.asarray(y_true)
-    y_pred = np.asarray(y_pred)
-    if len(y_true) != len(y_pred):
-        raise ValueError(f"y_true and y_pred must have the same length, got {len(y_true)} and {len(y_pred)}")
-    if train_test_split is not None and not (0 < train_test_split < len(y_true)):
-        raise ValueError(f"train_test_split ({train_test_split}) must be between 0 and {len(y_true)}")
+def plot_predictions(y_test: pd.Series, y_pred: Union[pd.Series, np.ndarray], figsize: Tuple[int, int] = (14, 6),
+                     title: str = "Predictions vs Actuals", name: str = "Model", ylabel: str = "Value") -> plt.Figure:
+    y_test = to_dt(y_test)
+    if isinstance(y_pred, pd.Series):
+        y_pred = to_dt(y_pred)
+        y_pred_values = y_pred.values
+    else:
+        y_pred_values = np.asarray(y_pred)
+    if len(y_test) != len(y_pred_values):
+        raise ValueError(f"y_test and y_pred must have the same length, got {len(y_test)} and {len(y_pred_values)}")
     fig, ax = plt.subplots(figsize=figsize)
-    x_axis = timestamps if timestamps is not None else np.arange(len(y_true))
-    ax.plot(x_axis, y_true, linewidth=2, label='Actual', alpha=0.7)
-    ax.plot(x_axis, y_pred, linewidth=2, label='Predicted', alpha=0.7, linestyle='--')
-    if train_test_split is not None:
-        split_x = x_axis[train_test_split]
-        ax.axvline(x=split_x, color='red', linestyle='--', linewidth=2, alpha=0.7, label='Train/Test Split')
+    ax.plot(y_test.index, y_test, linewidth=2, label='Actual', color='#2C3E50')
+    ax.plot(y_test.index, y_pred_values, linewidth=2, label='Predicted', 
+            linestyle='--', marker='o', markersize=4)
     ax.set_title(f'{name} - {title}', fontsize=13, fontweight='bold')
-    ax.set_xlabel('Time' if timestamps is not None else 'Index', fontsize=11)
-    ax.set_ylabel('Value', fontsize=11)
+    ax.set_xlabel('Time', fontsize=11)
+    ax.set_ylabel(ylabel, fontsize=11)
     ax.legend(fontsize=10)
     ax.grid(True, alpha=0.3)
     plt.tight_layout()

@@ -13,30 +13,30 @@ class ProbabilisticValidator(BaseValidator):
         coverage = np.mean((y_true >= y_lower) & (y_true <= y_upper))
         coverage_deviation = abs(coverage - confidence_level)
         results.append(Result(test_name="Prediction Interval Coverage",
-                                        statistic=coverage,
-                                        passed=coverage_deviation < 0.05,  # within 5% of target
-                                        metadata={'target_coverage': confidence_level, 
-                                                  'actual_coverage': coverage, 
-                                                  'deviation': coverage_deviation}))
+                              statistic=coverage,
+                              passed=coverage_deviation < 0.05,  # within 5% of target
+                              metadata={'target_coverage': confidence_level, 
+                                        'actual_coverage': coverage, 
+                                        'deviation': coverage_deviation}))
         avg_width = np.mean(y_upper - y_lower)
         std_y = np.std(y_true)
         relative_width = avg_width / std_y if std_y > 0 else np.nan
         results.append(Result(test_name="Average Interval Width",
-                                        statistic=avg_width,
-                                        metadata={'relative_width': relative_width,
-                                                  'interpretation': 'Width relative to data std'}))
+                              statistic=avg_width,
+                              metadata={'relative_width': relative_width,
+                                        'interpretation': 'Width relative to data std'}))
         alpha = 1 - confidence_level
         width = y_upper - y_lower
         lower_miss = (2 / alpha) * (y_lower - y_true) * (y_true < y_lower)
         upper_miss = (2 / alpha) * (y_true - y_upper) * (y_true > y_upper)
         winkler_score = np.mean(width + lower_miss + upper_miss)
         results.append(Result(test_name="Winkler Score",
-                                        statistic=winkler_score,
-                                        metadata={'interpretation': 'Lower is better; penalizes wide intervals and misses'}))
+                              statistic=winkler_score,
+                              metadata={'interpretation': 'Lower is better; penalizes wide intervals and misses'}))
         sharpness = np.mean(y_upper - y_lower)
         results.append(Result(test_name="Interval Sharpness",
-                                        statistic=sharpness,
-                                        metadata={'interpretation': 'Average interval width; smaller indicates sharper forecasts'}))
+                              statistic=sharpness,
+                              metadata={'interpretation': 'Average interval width; smaller indicates sharper forecasts'}))
         return results
     
     def validate_quantile_forecasts(self, y_true: np.ndarray, quantile_forecasts: Dict[float, np.ndarray]) -> List[Result]:
@@ -48,14 +48,14 @@ class ProbabilisticValidator(BaseValidator):
             coverage = np.mean(y_true <= y_pred_q)
             coverage_deviation = abs(coverage - q)
             results.append(Result(test_name=f"Quantile {q:.2f} Validation",
-                                            statistic=pinball_score,
-                                            p_value=coverage,
-                                            passed=coverage_deviation < 0.05,
-                                            metadata={'target_quantile': q,
-                                                      'empirical_coverage': coverage,
-                                                      'coverage_deviation': coverage_deviation,
-                                                      'pinball_loss': pinball_score,
-                                                      'interpretation': 'Coverage should match target quantile'}))
+                                  statistic=pinball_score,
+                                  p_value=coverage,
+                                  passed=coverage_deviation < 0.05,
+                                  metadata={'target_quantile': q,
+                                            'empirical_coverage': coverage,
+                                            'coverage_deviation': coverage_deviation,
+                                            'pinball_loss': pinball_score,
+                                            'interpretation': 'Coverage should match target quantile'}))
         return results
     
     def validate_probabilistic_calibration(self, y_true: np.ndarray, predicted_probs: np.ndarray, 
@@ -89,6 +89,5 @@ class ProbabilisticValidator(BaseValidator):
                 count += 1
         term2 = term2 / count if count > 0 else 0
         crps = term1 - 0.5 * term2
-
         return Result(test_name="Continuous Ranked Probability Score", statistic=crps, 
                                 metadata={'interpretation': 'Lower is better; measures forecast skill', 'n_samples': n_samples})

@@ -5,7 +5,6 @@ from .validators import ResidualValidator, StationarityValidator
 from .metrics import MetricsCalculator
 from .results import Output
 
-
 class ModelValidationFramework:
     def __init__(self, model_name: str = "Model", alpha: float = 0.05, max_lags: int = 10, mape_warn_threshold: float = 15.0, r2_warn_threshold: float = 0.3):
         self.model_name = model_name
@@ -26,14 +25,14 @@ class ModelValidationFramework:
         residuals = self._coerce_1d(residuals, "residuals")
         for result in self._residual_validator.validate(residuals):
             self.report.add_result(result)
-        self._generate_test_warnings()
+        # self._generate_test_warnings()
         return self
 
     def validate_stationarity(self, series: np.ndarray) -> "ModelValidationFramework":
         series = self._coerce_1d(series, "series")
         for result in self._stationarity_validator.validate(series):
             self.report.add_result(result)
-        self._generate_test_warnings()
+        # self._generate_test_warnings()
         return self
 
     def calculate_metrics(self, y_true: np.ndarray, y_pred: np.ndarray, prefix: str = "") -> "ModelValidationFramework":
@@ -41,7 +40,7 @@ class ModelValidationFramework:
         metrics = self._metrics_calculator.calculate_all_metrics(y_true, y_pred, prefix)
         for name, value in metrics.items():
             self.report.add_metric(name, value)
-        self._generate_metric_warnings()
+        # self._generate_metric_warnings()
         return self
 
     def run_comprehensive_validation(self, y_train: np.ndarray, y_train_pred: np.ndarray, y_test: Optional[np.ndarray] = None, 
@@ -49,7 +48,7 @@ class ModelValidationFramework:
         self.reset()
         self.calculate_metrics(y_train, y_train_pred, prefix="train_")
         if (y_test is None) != (y_test_pred is None):
-            raise ValueError("Provide both y_test and y_test_pred, or neither.")
+            raise ValueError("Provide both y_test and y_test_pred, or neither")
         if y_test is not None:
             self.calculate_metrics(y_test, y_test_pred, prefix="test_")
         train_residuals = (self._coerce_1d(y_train, "y_train") - self._coerce_1d(y_train_pred, "y_train_pred"))
@@ -102,24 +101,20 @@ class ModelValidationFramework:
             for warning in self.report.warnings:
                 p(f"  {warning}")
             p()
-
         p(sep)
 
     @staticmethod
     def _coerce_1d(arr: np.ndarray, name: str) -> np.ndarray:
         arr = np.asarray(arr, dtype=float).flatten()
         if arr.ndim != 1 or arr.size == 0:
-            raise ValueError(f"'{name}' must be a non-empty 1-D array.")
+            raise ValueError(f"'{name}' must be a non-empty 1-D array")
         return arr
 
     def _coerce_matched_1d(self, y_true: np.ndarray, y_pred: np.ndarray, label: str) -> tuple[np.ndarray, np.ndarray]:
         y_true = self._coerce_1d(y_true, f"{label} y_true")
         y_pred = self._coerce_1d(y_pred, f"{label} y_pred")
         if y_true.shape != y_pred.shape:
-            raise ValueError(
-                f"Shape mismatch for '{label}': "
-                f"y_true={y_true.shape}, y_pred={y_pred.shape}."
-            )
+            raise ValueError(f"Shape mismatch for '{label}': y_true={y_true.shape}, y_pred={y_pred.shape}")
         return y_true, y_pred
 
     def _generate_test_warnings(self) -> None:

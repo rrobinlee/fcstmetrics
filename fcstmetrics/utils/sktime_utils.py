@@ -10,7 +10,7 @@ def convert_to_sktime_format(data: Union[pd.DataFrame, pd.Series, np.ndarray], f
         if len(data.columns) == 1:
             data = data.iloc[:, 0]
         else:
-            raise ValueError(f"DataFrame has {len(data.columns)} columns\nPlease select a single column or pass a Series/array.")
+            raise ValueError(f"DataFrame has {len(data.columns)} columns\nPlease select a single column or pass a Series/array")
     if isinstance(data, np.ndarray):
         data = pd.Series(data.flatten())
     if not isinstance(data, pd.Series):
@@ -25,7 +25,7 @@ def convert_to_sktime_format(data: Union[pd.DataFrame, pd.Series, np.ndarray], f
         start_date = pd.Timestamp(start_date)
     if freq is None:
         freq = 'D'
-        warnings.warn(f"No frequency provided. Defaulting to daily frequency ('{freq}')\nSpecify freq parameter for accurate time indexing.",
+        warnings.warn(f"No frequency provided. Defaulting to daily frequency ('{freq}')\nSpecify freq parameter for accurate time indexing",
                       UserWarning)
     try:
         new_index = pd.date_range(start=start_date, periods=len(data), freq=freq)
