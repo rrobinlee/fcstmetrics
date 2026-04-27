@@ -24,4 +24,4 @@ fcstmetrics/
     └── visualization.py    
 ```
 
-*See notebooks/example_1.ipynb for example usage.*
+*See notebooks/example_1.pdf for example usage.*
