@@ -1,6 +1,6 @@
 # fcstmetrics
 
-A Python library for time series diagnostics, such as exploratory data analysis, statistical tests, and residual analysis. Consolidated useful functions and modules from previous college projects and assignments into a reusable framework.
+A Python library for time series diagnostics, such as exploratory data analysis, statistical tests, and residual analysis. Consolidated items from previous college projects and assignments into a reusable framework.
 
 ```
 fcstmetrics/
